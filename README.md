@@ -1,12 +1,6 @@
-# 2013 qPCR project
+# The one with qPCR data 
 
-I tried to organize this directory in the order of operations
-
-1. behavior ephys
-2. qpcr
-3. integrative analyses
-
-So, the files within organized the bin, data, and results directories all start with a 1, 2, or 3 to correspond to the order or operations from which they came
+## Data Management
 
 ## data
 - 01_fmr1-WT-DataSet.xlsx: the mutli-tab spreadsheet given to be by Andre
@@ -16,15 +10,24 @@ So, the files within organized the bin, data, and results directories all start 
 - 02_qpcrdata.csv: the qpcr sample data sheet
 - 02_qPCRdata.xlsx: the excell version of the qpcr data sheet
 - 03_behavephysqpcr_WTonly_old.csv: an old analyses that I still have
+- summaries for maddy
+- 
 
-## bin
-01_behavephys.R
-02_qpcr.R 
+## bin	
+- 01_behavephys.Rmd	
+- 01_behavephys.md	
+- 02_qpcr.R	
+- 03_integration.R	
+- 04_wgcna.R	
+- 0__integration.R
 
 
 ## figures
 
+
 <img src="./figures/qpcr-01.png" width="1000" />
 
+
+<img src="./figures/NSBlaboratory-02.png" width="1000" />
 
 
