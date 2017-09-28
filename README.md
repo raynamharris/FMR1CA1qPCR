@@ -1,4 +1,6 @@
-# The one with qPCR data 
+# Abstract
+
+In this experiment, I ask if avoidance behaviors are regulated by molecular changes that alter the synaptic activity in a hippocampal circuit. My null hypothesis is that a conditioned place avoidance response is not due to long-term molecular changes at pre- and post-synaptic levels of a neuronal circuits. One alternative hypothesis is that changes in gene expression of candidate proteins whose activity underline functional changes in synapses subservient of memory that have long been studies will underlie changes in behavior. A type II statistical error would be that something other than knowledge acquisition and memory alter cell and molecular biology. I describe our first collaborative and integrative studying analyzing behavior, electrophysiology, and candidate gene expression in mice in a pop-up laboratory at the Marine Biological Laboratories. In this study, we fail to reject the null hypothesis that synaptic plasticity at the CA3-CA1 synapse and molecular activity in CA3 and CA1 do not regulate avoidance learning. However, I concluded that this outcome was the result of technical limitations (setting up a new lab takes time) and mishaps (using unfamiliar protocols) and not of biological significance. 
 
 ## Data Management
 
@@ -10,22 +12,18 @@
 - 02_qpcrdata.csv: the qpcr sample data sheet
 - 02_qPCRdata.xlsx: the excell version of the qpcr data sheet
 - 03_behavephysqpcr_WTonly_old.csv: an old analyses that I still have
-- summaries for maddy
 - 
 
 ## bin	
-- 01_behavephys.Rmd	
-- 01_behavephys.md	
-- 02_qpcr.R	
-- 03_integration.R	
-- 04_wgcna.R	
-- 0__integration.R
+- 01_behavphysqpcr.md
+- 01_behavphysqpcr.Rmd : the analysis for all the data
+- 04_wgcna.R: an out of date exploritory analysis I did a while back 
 
 
 ## figures
 
 
-<img src="./figures/qpcr-01.png" width="1000" />
+<img src="./figures/01_behavphysqpcr-01.png" width="1000" />
 
 
 <img src="./figures/NSBlaboratory-02.png" width="1000" />
