@@ -15,9 +15,8 @@ In this experiment, I ask if avoidance behaviors are regulated by molecular chan
 - 
 
 ## bin	
-- 01_behavphysqpcr.md
-- 01_behavphysqpcr.Rmd : the analysis for all the data
-- 04_wgcna.R: an out of date exploritory analysis I did a while back 
+- [01_behavphysqpcr.Rmd](https://github.com/raynamharris/FMR1CA1qPCR/blob/master/bin/01_behavphysqpcr.Rmd): the analysis file
+- [01_behavphysqpcr.md](https://github.com/raynamharris/FMR1CA1qPCR/blob/master/bin/01_behavphysqpcr.md): the output 
 
 
 ## figures

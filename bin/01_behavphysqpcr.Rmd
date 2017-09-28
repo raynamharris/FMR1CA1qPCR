@@ -7,7 +7,7 @@ output:
     variant: markdown_github
 ---
 
-```{r setup, echo = F}
+```{r setup, echo = F, message = F}
 # Part 1: Reading and analyzing beahvior and physiology data
 
 ## load libraries -----
@@ -60,7 +60,7 @@ colorvalgenoAPA3 <-  c("WT_control" = "black" ,
 dodge <- position_dodge(.3)
 ```
 
-```{r data wrangle, echo=F}
+```{r data wrangle, echo=F, message=F}
 
 ## wrangle the raw wt and fmr1 dataframes ----
 
@@ -80,17 +80,12 @@ fmr1$next. <- NULL
 fmr1$PopSpike.max........mV. <- NA  ## add column
 fmr1$PospSpike.Probability <- NA  ## add column
 fmr1 <- fmr1[-c(75:80), ] ## removing rows
-names(wt)
-names(fmr1)
 
 
 ## create ind column with a animal name that matches qpcr (e.g "FMR1 AB" or "BL 19")
 wt$ind <- wt$filename
-head(wt$ind)
 wt$ind <- gsub("[[:blank:]]*bl", "BL ", wt$ind) ##removed blank space then changes bl1... to BL 1...
 wt$ind <- gsub("D[[:print:]]*", "", wt$ind) ## deletes the D (for Day) and everythign thereafter
-wt$ind
-
 fmr1$ind <- fmr1$filename
 fmr1$ind <- gsub("RoomTrack_", "", fmr1$ind) ##remove RommTrack_"
 fmr1$ind <- gsub("fmr1", "FMR1 ", fmr1$ind) ## changes to FMR1
@@ -98,8 +93,6 @@ fmr1$ind <- gsub("frm1", "FMR1 ", fmr1$ind) ## because one was typed wrong
 fmr1$ind <- gsub("wildtype", "BL ", fmr1$ind) ## that one wildtype sample name
 fmr1$ind <- gsub("_[ptr][[:print:]]*", "", fmr1$ind) ##deletes the rest of the filename
 fmr1 <- filter(fmr1, !grepl("wildtypeA", filename ))  ## remove the 1 wildtype ind
-fmr1$ind
-
 
 ## rename columns
 names(wt)[3] <- "TotalTime"
@@ -158,7 +151,6 @@ names(wt)[56] <- "T2Retention"
 names(wt)[57] <- "IO_Max"
 names(wt)[58] <- "LTP_Baseline"
 names(wt)[59] <- "LTP_Baseline_SD"
-names(wt) # check all good
 
 ## do same for fmr1
 names(fmr1)[3] <- "TotalTime"
@@ -227,7 +219,7 @@ fmr1$genotype <- as.factor(fmr1$genotype)
 
 wtfmr1 <- rbind(wt, fmr1) ## combine the datasets into one
 wtfmr1 <- filter(wtfmr1, grepl("Room", filename)) ## remove non-data rows
-str(wtfmr1)
+
 
 ## making strings factors
 wtfmr1$ind <- as.factor(wtfmr1$ind)  
@@ -235,7 +227,7 @@ wtfmr1$APA <- as.factor(wtfmr1$APA)
 
 ## making a bunch of columns numeric
 wtfmr1[, c(3:45, 49:56, 58:59)] <- sapply(wtfmr1[, c(3:45, 49:56, 58:59)], as.numeric)
-str(wtfmr1)
+
 
 ## add column session with APA information
 wtfmr1$session <- ifelse(grepl("pretraining|pretrain|Hab", wtfmr1$filename), "pretraining", 
@@ -245,20 +237,18 @@ wtfmr1$session <- ifelse(grepl("pretraining|pretrain|Hab", wtfmr1$filename), "pr
                                           ifelse(grepl("retention|reten", wtfmr1$filename), "retention", 
                                                  ifelse(grepl("Retest", wtfmr1$filename), "retest", "NA"))))))
 
-wtfmr1$session  ## check that all names good with no NAs                                 
 wtfmr1$session <- as.factor(wtfmr1$session)  
 wtfmr1$session <- factor(wtfmr1$session, levels = c("pretraining", "training1", "training2", "training3", "retention", "retest"))
 
 ### separate out the summary columns and clean up / wrangle ----
 summary <- filter(wtfmr1, session %in% c("retention", "retest"))
 summary <- summary[c(60:61,48,62,49:59,1)] #select and reorder columns, so animal first
-names(summary)
-str(summary)
+
 
 ## rename APA to match qpcr data
 #summary$APA <- revalue(summary$APA, c("untrained" = "control"))  # using "untrained" is more informative than control
 summary$APA <- factor(summary$APA, levels = c("untrained", "trained"))
-summary$APA
+
 
 ## making a bunch of columns numeric
 summary$IO_Max <- gsub("%", "", summary$IO_Max) #remove the percent sign
@@ -267,18 +257,14 @@ summary[, c(5:15)] <- sapply(summary[, c(5:15)], as.numeric)
 ## create genoAPA column
 summary$genoAPA <- summary$genoAPA <- as.factor(paste(summary$genotype,summary$APA, sep="_"))
 summary$genoAPA <- factor(summary$genoAPA, levels = c("WT_untrained" ,"WT_trained"  , "FMR1-KO_untrained","FMR1-KO_trained" ))
-summary$genoAPA
 
-head(summary)
+
 summary_long <- melt(summary, id=c("ind","genotype", "APA", "session", "filename", "genoAPA"))
 summary_long$value <- as.numeric(summary_long$value)
-str(summary_long)
-levels(summary_long$genoAPA)
 levels(summary_long$genoAPA) <- c("WT_untrained" ,"WT_trained"  , "FMR1-KO_untrained","FMR1-KO_trained" )
 
 
 ### improve indiviual session dataframe ----
-str(wtfmr1)
 wtfmr1 <- wtfmr1[c(60:61,62,1:45)]  # removes summary columns
 
 ##create APA dataframe to add APA to wtfrm1
@@ -292,18 +278,15 @@ wtfmr1$genoAPA <- as.factor(paste(wtfmr1$genotype,wtfmr1$APA, sep="_"))
 wtfmr1$genoAPA <- factor(wtfmr1$genoAPA, levels = c("WT_untrained", "FMR1-KO_untrained", "WT_trained", "FMR1-KO_trained"))
 wtfmr1$genoAPAsession <- as.factor(paste(wtfmr1$genoAPA, wtfmr1$session, sep="_")) #create genoAPAsession column
 wtfmr1$genoAPAsessionInd <- as.factor(paste(wtfmr1$genoAPAsession, wtfmr1$ind, sep="_")) #create genoAPAsessionInd column
-head(wtfmr1)
-names(wtfmr1)
+
 
 # reorders dataframe
 wtfmr1 <- wtfmr1[c(1:4,49:52,5:48)]  
-names(wtfmr1)
+
 
 ### melt the wtfmr1 df to make long for graphics
 wtfmr1_long <- melt(wtfmr1, id=c("ind","genotype", "APA", "session", "genoAPA", "genoAPAsession", "genoAPAsessionInd", "filename"))
 wtfmr1_long$value <- as.numeric(wtfmr1_long$value)
-str(wtfmr1_long)
-head(wtfmr1_long)
 
 
 wtfmr1Num <- wtfmr1
@@ -521,7 +504,6 @@ head(behavior)
 
 phy <- summary
 phy <- melt(summary, id=c("ind","genotype", "APA", "session", "genoAPA", "filename"))
-head(phy)
 phy <- dplyr::rename(phy, measure = variable)
 phy <- dplyr::select(phy, ind, genotype, APA,genoAPA, measure, value)
 head(phy)
@@ -574,7 +556,6 @@ plot(correlation)
 dev.off()
 
 all$correlation2 <- "Entrances vs rpl19"
-
 correlation <- all %>%
   filter(APA == "trained") %>%
   ggplot(aes(x=training3_Entrances, y=log10(rpl19), color=genoAPA)) +
@@ -603,7 +584,6 @@ names(allmatrix)
 allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
 allmatrix <- log10(allmatrix + 1) #log transform all data
 allmatrix <- as.matrix(allmatrix)
-str(allmatrix)
 allmatrix <- na.omit(allmatrix)
 allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
 
@@ -614,11 +594,9 @@ allmatrix <- all %>%
   filter(genotype == "WT", APA == "trained")
 allmatrix$genoAPAind <- as.factor(paste(allmatrix$genoAPA,allmatrix$ind, sep="_"))
 rownames(allmatrix) <- allmatrix$genoAPAind  # set $genoAPAsession as rownames
-names(allmatrix)
 allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
 allmatrix <- log10(allmatrix + 1) #log transform all data
 allmatrix <- as.matrix(allmatrix)
-str(allmatrix)
 allmatrix <- na.omit(allmatrix)
 allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
 
@@ -628,11 +606,9 @@ allmatrix <- all %>%
   filter(genotype == "FMR1-KO", APA == "trained")
 allmatrix$genoAPAind <- as.factor(paste(allmatrix$genoAPA,allmatrix$ind, sep="_"))
 rownames(allmatrix) <- allmatrix$genoAPAind  # set $genoAPAsession as rownames
-names(allmatrix)
 allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
 allmatrix <- log10(allmatrix + 1) #log transform all data
 allmatrix <- as.matrix(allmatrix)
-str(allmatrix)
 allmatrix <- na.omit(allmatrix)
 allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
 
@@ -641,14 +617,8 @@ corrplot(allmatrix_cor, type="upper", tl.col="black", tl.srt=45)
 
 
 
-
-
-
 ````{r newintegrativefigures}
 ## with all long
-unique(alllong$measure)
-levels(alllong$measure)
-
 alllongslim <- alllong %>%
   filter(grepl("IO_Max|pretraining_Entrances|training3_Entrances|grim|prkcz|rpl19", measure)) 
 
