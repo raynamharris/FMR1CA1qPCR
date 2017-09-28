@@ -7,8 +7,7 @@ output:
     variant: markdown_github
 ---
 
-
-```{r setup}
+```{r setup, echo = F}
 # Part 1: Reading and analyzing beahvior and physiology data
 
 ## load libraries -----
@@ -19,24 +18,35 @@ library(reshape2) #@ for melting dataframe
 library(ggdendro) ## for dendrograms!!
 library(cowplot) ## for easy modification to themes
 
+library(MCMC.qpcr) # for qpcr analysis
+library(reshape) #for making data wide
+library(corrplot) # simple corrplot with size-circles
+library(PerformanceAnalytics) # fancy ass correlation plot
+library(Hmisc) # for correlation stats
+
 knitr::opts_chunk$set(fig.path = '../results/')
 ```
 
-```{r figureoptions}
+## Behavior
+
+```{r figureoptions, echo = F}
 
 ## color palettes
 FentonPalette <- c('black','grey50','red','darkorange')
 WTPalette <- c('black','red')
 FMR1Palette <- c('grey50','darkorange')
-colorvalAPA11 <-  c("WT" = "#bf5700", "FMR1-KO" = "#54278f", "FMR1-KO_trained" = "#ca0020","WT_trained" = "#ca0020",  "FMR1-KO_untrained" = "#404040","WT_untrained" = "#404040" )
+c11 <-  c("WT" = "#bf5700", "FMR1-KO" = "#54278f", "FMR1-KO_trained" = "#ca0020","WT_trained" = "#ca0020",  "FMR1-KO_untrained" = "#404040","WT_untrained" = "#404040" )
 colorvalgenoAPA <-  c("FMR1-KO_trained" = "#54278f","WT_trained" = "#bf5700",  "FMR1-KO_untrained" = "#9e9ac8","WT_untrained" = "#fe9929" ) 
 colorvalgenoAPAfill <- c( "#fe9929" , "#bf5700",  "#9e9ac8", "#54278f")
+colorvalgenoAPAcontrol <-  c("FMR1-KO_trained" = "#54278f","WT_trained" = "#bf5700",  "FMR1-KO_control" = "#9e9ac8","WT_control" = "#fe9929" )
+colvalAPA12 <- c("WT_untrained" = "black",  "WT_trained" = "red", "FMR1-KO_untrained" = "black", "FMR1-KO_trained" = "red")
+colorvalgenoAPA2 <-  c("FMR1-KO_trained" = "white","WT_trained" = "red",  "FMR1-KO_untrained" = "white","WT_untrained" = "black" ) 
 
 ## jitter points
 dodge <- position_dodge(.3)
 ```
 
-```{r data wrangle}
+```{r data wrangle, echo=F}
 
 ## wrangle the raw wt and fmr1 dataframes ----
 
@@ -261,10 +271,11 @@ wtfmr1 <- wtfmr1[c(60:61,62,1:45)]  # removes summary columns
 ##create APA dataframe to add APA to wtfrm1
 APA <-  summary[c(1:3)] 
 wtfmr1 <- left_join(wtfmr1,APA) 
-tail(wtfmr1)
+
+
 
 ## create columns for genotype*APA, genotype*APA*session, and genotype*APA*session*IND
-wtfmr1$genoAPA <- wtfmr1$genoAPA <- as.factor(paste(wtfmr1$genotype,wtfmr1$APA, sep="_"))
+wtfmr1$genoAPA <- as.factor(paste(wtfmr1$genotype,wtfmr1$APA, sep="_"))
 wtfmr1$genoAPA <- factor(wtfmr1$genoAPA, levels = c("WT_untrained", "FMR1-KO_untrained", "WT_trained", "FMR1-KO_trained"))
 wtfmr1$genoAPAsession <- as.factor(paste(wtfmr1$genoAPA, wtfmr1$session, sep="_")) #create genoAPAsession column
 wtfmr1$genoAPAsessionInd <- as.factor(paste(wtfmr1$genoAPAsession, wtfmr1$ind, sep="_")) #create genoAPAsessionInd column
@@ -282,308 +293,6 @@ str(wtfmr1_long)
 head(wtfmr1_long)
 
 
-#write.csv(wtfrm1, "wtfmr1_forMaddy.csv", row.names = F)
-#write.csv(wtfrm1, "wtfmr1_forMaddy.csv", row.names = F)
-```
-
-
-
-
-
-```{r}
-## this plot is no longer legit because of the retention/retest problem
-ggplot(wtfmr1, aes(as.numeric(x=session), y=pTimeTARG, color=genoAPA)) + 
-  stat_smooth() + theme_bw() + scale_colour_manual(values=FentonPalette) + 
-  scale_y_continuous(name="Probability of being in the shock zone") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retention", "6" = "Retest")) 
-
-```
-
-```{r}
-filter(wtfmr1, genotype == "WT") %>%
-  droplevels() %>%
-  ggplot(aes(as.numeric(x=session), y=pTimeTARG, color=genoAPA)) + 
-  stat_smooth() + theme_bw() + scale_colour_manual(values=WTPalette) + 
-  scale_y_continuous(name="Probability of being in the shock zone") + 
-  scale_x_continuous(name =NULL, 
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retest"))
-```
-
-```{r}
-filter(wtfmr1, genotype != "WT") %>%
-  droplevels() %>%
-  ggplot(aes(as.numeric(x=session), y=pTimeTARG, color=genoAPA)) + 
-  stat_smooth() + theme_bw() + scale_colour_manual(values=FMR1Palette) + 
-  scale_y_continuous(name="Probability of being in the shock zone") + 
-  scale_x_continuous(name =NULL, 
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retention"))
-```
-
-```{r}
-## Plots of time in seconds: saved as 1_TimeMeasures
-wtfmr1_long %>% 
-  filter(grepl("Time", variable)) %>% 
-  filter(!grepl("TotalTime|pTime", variable)) %>% 
-  ggplot(aes(as.numeric(x=session), y=value, color=genoAPA)) +
-  stat_smooth() + facet_wrap(~variable, scales = "free_y") +
-  scale_y_continuous(name="Time (s)") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Untrained", "FMR1-KO Untrained", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank(), legend.position = c(0.85, 0.25))
-```
-
-```{r}
-## Plots of pTime (probability): saved as 1_TimeProbability
-wtfmr1_long %>% filter(grepl("pTime", variable)) %>% 
-  ggplot(aes(as.numeric(x=session), y=value, color=genoAPA)) +
-  stat_smooth() + facet_wrap(~variable, scales = "free_y") +
-  scale_y_continuous(name="Probability") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank())
-```
-
-```{r}
-## Plots of path (distance): saved as 1_Path
-wtfmr1_long %>% filter(grepl("Path", variable)) %>% 
-  ggplot(aes(as.numeric(x=session), y=value, color=genoAPA)) +
-  stat_smooth() + facet_wrap(~variable, scales = "free_y") +
-  scale_y_continuous(name="Distance (m)") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", 
-                              "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank(), legend.position = c(0.85, 0.25))
-```
-
-```{r}
-## Plots of speed: saved as 1_Speed
-wtfmr1_long %>% 
-  filter(grepl("Speed|speed", variable))%>% 
-  ggplot(aes(as.numeric(x=session), y=value, color=genoAPA)) +
-  stat_smooth() + facet_wrap(~variable, scales = "free_y") +
-  scale_y_continuous(name="Speed (cm/s)") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank())
-```
-
-
-```{r}
-### Favorite that show leanring diffs
-## saved as 1-behaviorplots
-wtfmr1_long %>% 
-  filter(grepl("pTimeTARG|PathToFirstEntrance|PathToSecondEntrance", variable))%>% 
-  ggplot(aes(as.numeric(x=session), y=value, color=genoAPA)) +
-  stat_smooth() + facet_wrap(~variable, scales = "free_y") +
-  scale_y_continuous(name="Value different for each variable") + 
-  scale_x_continuous(name =NULL, 
-                     breaks = c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1", 
-                              "3" = "Training 2", "4" = "Training 3", "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank())
-
-
-### Electrophysiology melting and graphing!!! ---- 
-```
-
-```{r}
-
-## plot all the summary_long data!: saved as 1-SummaryValues
-summary_long %>%
-  filter(grepl("IO_Max|LTP_Baseline", variable))%>% 
-  filter(!grepl("LTP_Baseline_SD", variable))%>% 
-  ggplot(aes(x=genoAPA, y=value, color=genoAPA)) +
-  geom_boxplot() +  facet_wrap(~variable, scales = "free_y") +
-  theme_bw() +
-  scale_y_continuous(name=NULL) + 
-  scale_x_discrete(name=NULL) + 
-  scale_colour_manual(values=FentonPalette, name="Treatment Group",
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) +
-  theme_bw() + 
-  theme(panel.grid.minor = element_blank(),
-        axis.text.x = element_blank(), 
-        axis.ticks = element_blank())
-
-```
-
-
-
-```{r 2-iomax}
-
-## plot all the summary_long data!: saved as 1-SummaryValues
-iomax <- summary_long %>%
-  filter(grepl("IO_Max", variable))%>% 
-  ggplot(aes(x=genoAPA, y=value, fill=genoAPA)) +
-  geom_boxplot() +  
-  theme_bw() +
-  scale_fill_manual(values=colorvalgenoAPAfill)  +
- theme_cowplot(font_size = 8, line_size = 0.25) +
-  scale_y_continuous(name="IO_Max")  +
-  facet_wrap(~variable) +
-  theme(legend.position = "none", axis.text.x = element_blank())
-iomax 
-
-
-iomax <- summary_long %>%
-  filter(grepl("IO_Max", variable))%>% 
-  ggplot(aes(x=genoAPA, y=value, fill=genoAPA)) +
-  geom_violin() +  
-  theme_bw() +
-  scale_x_discrete(name="")  + 
-  scale_fill_manual(values=colorvalgenoAPAfill)  +
- theme_cowplot(font_size = 8, line_size = 0.25) +
-  scale_y_continuous(name="IO_Max")  +
-  facet_wrap(~variable) +
-  theme(legend.position = "none", axis.text.x = element_blank())
-iomax 
-
-pdf(file="../figures/2-iomax.pdf", width=1.5, height=2.25)
-plot(iomax)
-dev.off()
-
-```
-
-
-
-```{r}
-### Correlation plot 1 : all data for individuals ----
-## first, make the data a matrix with genoAPAsessionInd as the row names
-wtfmr1_matrix <- wtfmr1    #create new dataframe
-rownames(wtfmr1_matrix) <- wtfmr1_matrix$genoAPAsessionInd     # set $genoAPAsessionInd as rownames
-names(wtfmr1_matrix)
-wtfmr1_matrix <- wtfmr1_matrix[-c(1:8,10)] #delete all non-numeric columns and TotalTime
-head(wtfmr1_matrix)
-str(wtfmr1_matrix)
-
-## next, compute a correlation matrix and melt
-wtfmrt_cormat <- round(cor(wtfmr1_matrix),2) # compute correlations
-wtfmrt_cormatlong <- melt(wtfmrt_cormat) # melt
-head(wtfmrt_cormatlong)
-
-## heatmap NOT clustered!!! # Saved as 1-beahvheatmap-ind
-ggplot(data = wtfmrt_cormatlong, aes(x=Var1, y=Var2, fill=value)) + 
-  geom_tile(color = "white")+
-  scale_fill_gradient2(low = "turquoise4", high = "tan4", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal()+ # minimal theme
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 10, hjust = 1)) +
-  scale_x_discrete(name="") +
-  scale_y_discrete(name="") 
-
-```
-
-```{r}
-### Correlation plot 2 : data averaged first by group ----
-
-## create matrix with genoAPAsession average values
-wtfmr1_matrix_avg <- wtfmr1    #create new dataframe
-names(wtfmr1_matrix_avg)
-wtfmr1_matrix_avg <- wtfmr1_matrix_avg[-c(1:6,8:10,51:52)] #delete p.miss, TotalTime and non-numeric columns EXCEPT genoAPAsession
-
-wtfmr1_matrix_avg <- wtfmr1_matrix_avg %>% 
-  group_by(genoAPAsession) %>%
-  dplyr::summarise_each(funs(mean))
-wtfmr1_matrix_avg <- as.data.frame(wtfmr1_matrix_avg)
-rownames(wtfmr1_matrix_avg) <- wtfmr1_matrix_avg$genoAPAsession  # set $genoAPAsession as rownames
-wtfmr1_matrix_avg[1] <- NULL
-head(wtfmr1_matrix_avg)
-
-## next, compute a correlation matrix and melt
-wtfmr1_matrix_avg_cormat <- round(cor(wtfmr1_matrix_avg),2) # compute correlations
-head(wtfmr1_matrix_avg_cormat)
-wtfmr1_matrix_avg_cormatlong <- melt(wtfmr1_matrix_avg_cormat) # melt
-head(wtfmr1_matrix_avg_cormatlong)
-
-## heatmap clustered!!! # Saved as 1-heatmap-group
-ggplot(data = wtfmr1_matrix_avg_cormatlong, aes(x=Var1, y=Var2, fill=value)) + 
-  geom_tile(color = "white")+
-  scale_fill_gradient2(low = "turquoise4", high = "tan4", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal()+ # minimal theme
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 10, hjust = 1)) +
-  scale_x_discrete(name="") +
-  scale_y_discrete(name="") 
-
-```
-
-```{r}
-
-### Not used but useful single plots ----
-
-## simple box plot faceted by genotype colored by genotype
-ggplot(data = wtfmr1, aes(x = session, y = TimeToFirstEntrance, fill=genoAPA)) +
-  geom_boxplot() + facet_wrap( ~ genoAPA)
-## simple box plot colored by genotype
-ggplot(data = wtfmr1, aes(x = session, y = TimeToSecondEntrance, by=genoAPA, fill=genoAPA)) +
-  geom_boxplot()
-## line plots for every individual shown individually
-ggplot(data=wtfmr1, aes(as.numeric(x=session), y=pTimeTARG, by=ind, color=genoAPA)) +
-  geom_line() + facet_wrap( ~ ind)
-## line plots for every individual shown by group
-ggplot(data=wtfmr1, aes(as.numeric(x=session), y=TimeToSecondEntrance, by=ind, color=genoAPA)) +
-  geom_line() + facet_wrap( ~ genoAPA)
-## line plots for every individual shown by group colored by individual
-ggplot(data=wtfmr1, aes(as.numeric(x=session), y=PathToSecondEntrance, by=ind, color=ind)) +
-  geom_line() + facet_wrap(~ genoAPA) 
-## Time to 2nd entrance of 4 groups by session stat smooth
-ggplot(data=wtfmr1, aes(as.numeric(x=session), y=TimeToSecondEntrance, color=genoAPA)) + 
-  stat_smooth() + # plots line with confidence interval
-  scale_y_continuous(name="Time to 2nd Entrance (s)") + # renames x axis
-  scale_x_continuous(name =NULL, #removed y axis label
-                     breaks=c(1, 2, 3, 4, 5, 6),
-                     labels=c("1" = "Pretraining", "2" = "Training 1",  # renmaes x axis labeles
-                              "3" = "Training 2", "4" = "Training 3", "5" = "Retention", "6" = "Retest")) +
-  scale_colour_manual(values=FentonPalette, name="Treatment Group", # says use color palete, rename legend
-                      labels=c("WT Control", "FMR1-KO Control", "WT Trained", "FMR1-KO Trainined")) + 
-  theme_bw() # removes grey background
-
-## some statistics ----
-lm1 = lm(data=wtfmr1, TimeToSecondEntrance~genoAPA+session+genoAPA:session)
-summary(lm1)
-xtabs(data=wtfmr1, ~genoAPA+session)
-anova(lm1)
-
-```
-
-```{r 1-numentrances}
-### now with different behavior plot
 wtfmr1Num <- wtfmr1
 wtfmr1Num$sessionNum <- ifelse(grepl("pretraining", wtfmr1Num$session), "1", 
                                      ifelse(grepl("training1", wtfmr1Num$session), "2",
@@ -595,6 +304,22 @@ wtfmr1Num$sessionNum <- as.numeric(as.character(wtfmr1Num$sessionNum))
 wtfmr1NumSummary <- dplyr::summarise(group_by(wtfmr1Num, genotype, APA, genoAPA, sessionNum), m = mean(Entrances), se = sd(Entrances)/sqrt(length(Entrances)), len = length(Entrances))
 wtfmr1NumSummary <- as.data.frame(wtfmr1NumSummary)
 
+#write.csv(wtfrm1, "wtfmr1_forMaddy.csv", row.names = F)
+```
+
+
+### Experimental Design
+```{r}
+APA$genoAPA <- as.factor(paste(APA$genotype,APA$APA, sep="_"))
+summary(APA)
+```
+
+
+
+###  Avoidance behavior: number of entrances
+
+```{r 1-numentrances}
+### now with different behavior plot
 
 numentrances <- wtfmr1NumSummary %>%
   ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
@@ -617,6 +342,50 @@ numentrances <- wtfmr1NumSummary %>%
   theme(legend.position = "none")
 numentrances
 
+
+wtfmr1NumSummary %>%
+  ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
+  geom_errorbar(aes(ymin=m-se, ymax=m+se, color=genoAPA), width=.1) +
+  geom_line(aes(colour=genoAPA, linetype=genoAPA)) +
+  geom_point(size = 2.5, aes(colour=genoAPA, shape=genotype)) +
+  scale_color_manual(values = colvalAPA12) +
+  scale_y_continuous(name="Number of Entrances",
+                     limits = c(0,35)) +
+  scale_x_continuous(name = NULL, 
+                     breaks = c(1, 2, 3, 4, 5),
+                     labels=c("1" = "Hab. ", "2" = "T1", "3" = "T2", 
+                              "4" = "T3", "5" = "Reten.")) +
+  theme_cowplot(font_size = 8, line_size = 0.25) +
+  background_grid(major = "y", minor = "y") +
+  scale_linetype_manual(values = c(1,2,1,2)) +
+  scale_shape_manual(values=c(16, 1))
+
+
+numentrances <- wtfmr1NumSummary %>%
+  ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
+  geom_errorbar(aes(ymin=m-se, ymax=m+se, color=genoAPA), width=.1) +
+  geom_line(aes(colour=genoAPA, linetype=genoAPA)) +
+  geom_point(size = 2.5, aes(colour=genoAPA, shape=genotype)) +
+  scale_color_manual(values = colvalAPA12) +
+  scale_y_continuous(name="Number of Entrances",
+                     limits = c(0,35)) +
+  scale_x_continuous(name = NULL, 
+                     breaks = c(1, 2, 3, 4, 5),
+                     labels=c("1" = "Hab. ", "2" = "T1", "3" = "T2", 
+                              "4" = "T3", "5" = "Reten.")) +
+  theme_cowplot(font_size = 8, line_size = 0.25) +
+  background_grid(major = "y", minor = "y") +
+  #theme( 
+  #      legend.position = "top",
+  #      legend.title=element_blank(),
+  #      legend.justification = c(0.1, 0.8))
+  theme(legend.position = "none") +
+  scale_linetype_manual(values = c(1,2,1,2)) +
+  scale_shape_manual(values=c(16, 1))
+numentrances
+
+
+
 pdf(file="../figures/1-numentrances.pdf", width=2, height=2.25)
 plot(numentrances)
 dev.off()
@@ -625,8 +394,54 @@ dev.off()
 
 ```{r stats}
 
-aov9 <- aov(m ~ APA2, data=wtfmr1NumSummary)
+aov9 <- aov(m ~ APA, data=wtfmr1NumSummary)
 summary(aov9) # p =  0.018
 TukeyHSD(aov9, which = "APA") # p = 0.0939973 for conflict-consistent 
 
 ```
+
+## Electrophysiology
+
+### IO Max
+
+```{r 2-io_max}
+summary_long %>%
+  filter(grepl("IO_Max", variable))%>% 
+  filter(!grepl("LTP_Baseline_SD", variable))%>% 
+  ggplot(aes(x=genoAPA, y=value, color=genoAPA, fill=genoAPA)) +
+  geom_violin() +  
+  facet_wrap(~variable, scales = "free_y") +
+  theme_bw() +
+  scale_y_continuous(name=NULL) + 
+  scale_x_discrete(name=NULL) + 
+  scale_colour_manual(values=colvalAPA12) +
+  theme_bw() + 
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(), 
+        axis.ticks = element_blank())  +
+  scale_fill_manual(values=colorvalgenoAPA2)
+
+iomax <- summary_long %>%
+  filter(grepl("IO_Max", variable))%>% 
+  ggplot(aes(x=genoAPA, y=value, color=genoAPA, fill=genoAPA)) +
+  geom_violin() +  
+  facet_wrap(~variable, scales = "free_y") +
+  theme_bw() +
+  scale_y_continuous(name="Input-Output Maximum") + 
+  scale_x_discrete(name=NULL) + 
+  scale_colour_manual(values=colvalAPA12) +
+  theme_bw() +
+  theme_cowplot(font_size = 8, line_size = 0.25) +
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(), 
+        axis.ticks = element_blank())  +
+  scale_fill_manual(values=colorvalgenoAPA2) +
+  theme(legend.position = "none", axis.text.x = element_blank())
+iomax
+
+pdf(file="../figures/2-iomax.pdf", width=1.5, height=2.25)
+plot(iomax)
+dev.off()
+
+```
+
