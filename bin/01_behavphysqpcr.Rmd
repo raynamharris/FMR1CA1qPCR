@@ -32,15 +32,29 @@ knitr::opts_chunk$set(fig.path = '../results/')
 ```{r figureoptions, echo = F}
 
 ## color palettes
-FentonPalette <- c('black','grey50','red','darkorange')
 WTPalette <- c('black','red')
-FMR1Palette <- c('grey50','darkorange')
-c11 <-  c("WT" = "#bf5700", "FMR1-KO" = "#54278f", "FMR1-KO_trained" = "#ca0020","WT_trained" = "#ca0020",  "FMR1-KO_untrained" = "#404040","WT_untrained" = "#404040" )
-colorvalgenoAPA <-  c("FMR1-KO_trained" = "#54278f","WT_trained" = "#bf5700",  "FMR1-KO_untrained" = "#9e9ac8","WT_untrained" = "#fe9929" ) 
-colorvalgenoAPAfill <- c( "#fe9929" , "#bf5700",  "#9e9ac8", "#54278f")
-colorvalgenoAPAcontrol <-  c("FMR1-KO_trained" = "#54278f","WT_trained" = "#bf5700",  "FMR1-KO_control" = "#9e9ac8","WT_control" = "#fe9929" )
-colvalAPA12 <- c("WT_untrained" = "black",  "WT_trained" = "red", "FMR1-KO_untrained" = "black", "FMR1-KO_trained" = "red")
-colorvalgenoAPA2 <-  c("FMR1-KO_trained" = "white","WT_trained" = "red",  "FMR1-KO_untrained" = "white","WT_untrained" = "black" ) 
+FMFR1Palette <- c('black','red')
+
+colvalAPA12 <- c("WT_untrained" = "black",  
+                 "WT_trained" = "red", 
+                 "FMR1-KO_untrained" = "black", 
+                 "FMR1-KO_trained" = "red")
+
+colvalAPA13 <- c("WT_control" = "black",  
+                 "WT_trained" = "red", 
+                 "FMR1-KO_control" = "black", 
+                 "FMR1-KO_trained" = "red")
+
+colorvalgenoAPA2 <-  c("WT_untrained" = "black" , 
+                       "WT_trained" = "red",  
+                       "FMR1-KO_untrained" = "white",
+                       "FMR1-KO_trained" = "white") 
+
+colorvalgenoAPA3 <-  c("WT_control" = "black" , 
+                       "WT_trained" = "red",  
+                       "FMR1-KO_control" = "white",
+                       "FMR1-KO_trained" = "white") 
+
 
 ## jitter points
 dodge <- position_dodge(.3)
@@ -85,7 +99,6 @@ fmr1$ind <- gsub("wildtype", "BL ", fmr1$ind) ## that one wildtype sample name
 fmr1$ind <- gsub("_[ptr][[:print:]]*", "", fmr1$ind) ##deletes the rest of the filename
 fmr1 <- filter(fmr1, !grepl("wildtypeA", filename ))  ## remove the 1 wildtype ind
 fmr1$ind
-
 
 
 ## rename columns
@@ -253,7 +266,7 @@ summary[, c(5:15)] <- sapply(summary[, c(5:15)], as.numeric)
 
 ## create genoAPA column
 summary$genoAPA <- summary$genoAPA <- as.factor(paste(summary$genotype,summary$APA, sep="_"))
-summary$genoAPA <- factor(summary$genoAPA, levels = c("WT_untrained", "FMR1-KO_untrained", "WT_trained", "FMR1-KO_trained"))
+summary$genoAPA <- factor(summary$genoAPA, levels = c("WT_untrained" ,"WT_trained"  , "FMR1-KO_untrained","FMR1-KO_trained" ))
 summary$genoAPA
 
 head(summary)
@@ -298,7 +311,7 @@ wtfmr1Num$sessionNum <- ifelse(grepl("pretraining", wtfmr1Num$session), "1",
                                      ifelse(grepl("training1", wtfmr1Num$session), "2",
                                             ifelse(grepl("training2", wtfmr1Num$session), "3",
                                                    ifelse(grepl("training3", wtfmr1Num$session), "4", 
-                                                          ifelse(grepl("retention", wtfmr1Num$session), "5", 
+                                                          ifelse(grepl("retention", wtfmr1Num$session), "6", 
                                                                  ifelse(grepl("retest", wtfmr1Num$session), "5", NA))))))
 wtfmr1Num$sessionNum <- as.numeric(as.character(wtfmr1Num$sessionNum))
 wtfmr1NumSummary <- dplyr::summarise(group_by(wtfmr1Num, genotype, APA, genoAPA, sessionNum), m = mean(Entrances), se = sd(Entrances)/sqrt(length(Entrances)), len = length(Entrances))
@@ -319,30 +332,6 @@ summary(APA)
 ###  Avoidance behavior: number of entrances
 
 ```{r 1-numentrances}
-### now with different behavior plot
-
-numentrances <- wtfmr1NumSummary %>%
-  ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
-  geom_errorbar(aes(ymin=m-se, ymax=m+se, color=genoAPA), width=.1) +
-  geom_line(aes(colour=genoAPA)) +
-  geom_point(size = 2.5, aes(colour=genoAPA)) +
-  scale_color_manual(values = colorvalgenoAPA) +
-  scale_y_continuous(name="Number of Entrances",
-                     limits = c(0,35)) +
-  scale_x_continuous(name = NULL, 
-                     breaks = c(1, 2, 3, 4, 5),
-                     labels=c("1" = "Hab. ", "2" = "T1", "3" = "T2", 
-                              "4" = "T3", "5" = "Reten.")) +
-  theme_cowplot(font_size = 8, line_size = 0.25) +
-  background_grid(major = "y", minor = "y") +
-  #theme( 
-  #      legend.position = "top",
-  #      legend.title=element_blank(),
-  #      legend.justification = c(0.1, 0.8))
-  theme(legend.position = "none")
-numentrances
-
-
 wtfmr1NumSummary %>%
   ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
   geom_errorbar(aes(ymin=m-se, ymax=m+se, color=genoAPA), width=.1) +
@@ -352,15 +341,15 @@ wtfmr1NumSummary %>%
   scale_y_continuous(name="Number of Entrances",
                      limits = c(0,35)) +
   scale_x_continuous(name = NULL, 
-                     breaks = c(1, 2, 3, 4, 5),
+                     breaks = c(1, 2, 3, 4, 5, 6),
                      labels=c("1" = "Hab. ", "2" = "T1", "3" = "T2", 
-                              "4" = "T3", "5" = "Reten.")) +
+                              "4" = "T3", "5" = "Retest", "6" = "Reten.")) +
   theme_cowplot(font_size = 8, line_size = 0.25) +
   background_grid(major = "y", minor = "y") +
   scale_linetype_manual(values = c(1,2,1,2)) +
   scale_shape_manual(values=c(16, 1))
 
-
+wtfmr1NumSummary$behvaior <- "Number of Entrances"
 numentrances <- wtfmr1NumSummary %>%
   ggplot(aes(x= sessionNum, y=m, shape=genotype)) + 
   geom_errorbar(aes(ymin=m-se, ymax=m+se, color=genoAPA), width=.1) +
@@ -370,33 +359,23 @@ numentrances <- wtfmr1NumSummary %>%
   scale_y_continuous(name="Number of Entrances",
                      limits = c(0,35)) +
   scale_x_continuous(name = NULL, 
-                     breaks = c(1, 2, 3, 4, 5),
+                     breaks = c(1, 2, 3, 4, 5, 6),
                      labels=c("1" = "Hab. ", "2" = "T1", "3" = "T2", 
-                              "4" = "T3", "5" = "Reten.")) +
+                              "4" = "T3", "5" = "Retest", "6" = "Reten.")) +
   theme_cowplot(font_size = 8, line_size = 0.25) +
   background_grid(major = "y", minor = "y") +
-  #theme( 
-  #      legend.position = "top",
-  #      legend.title=element_blank(),
-  #      legend.justification = c(0.1, 0.8))
-  theme(legend.position = "none") +
+  theme( legend.position="none",
+         axis.title.y = element_blank()) +
   scale_linetype_manual(values = c(1,2,1,2)) +
-  scale_shape_manual(values=c(16, 1))
+  scale_shape_manual(values=c(16, 1)) +
+  facet_wrap(~behvaior)
 numentrances
 
 
 
-pdf(file="../figures/1-numentrances.pdf", width=2, height=2.25)
+pdf(file="../figures/1-numentrances.pdf", width=2.25, height=2)
 plot(numentrances)
 dev.off()
-
-```
-
-```{r stats}
-
-aov9 <- aov(m ~ APA, data=wtfmr1NumSummary)
-summary(aov9) # p =  0.018
-TukeyHSD(aov9, which = "APA") # p = 0.0939973 for conflict-consistent 
 
 ```
 
@@ -427,21 +406,324 @@ iomax <- summary_long %>%
   geom_violin() +  
   facet_wrap(~variable, scales = "free_y") +
   theme_bw() +
-  scale_y_continuous(name="Input-Output Maximum") + 
+  scale_y_continuous(name=NULL) + 
   scale_x_discrete(name=NULL) + 
   scale_colour_manual(values=colvalAPA12) +
-  theme_bw() +
-  theme_cowplot(font_size = 8, line_size = 0.25) +
+  theme_cowplot(font_size = 8, line_size = 0.1) +
   theme(panel.grid.minor = element_blank(),
         axis.text.x = element_blank(), 
-        axis.ticks = element_blank())  +
-  scale_fill_manual(values=colorvalgenoAPA2) +
-  theme(legend.position = "none", axis.text.x = element_blank())
+        legend.position="none",
+        axis.title = element_blank())  +
+  scale_fill_manual(values=colorvalgenoAPA2) 
 iomax
 
-pdf(file="../figures/2-iomax.pdf", width=1.5, height=2.25)
+pdf(file="../figures/2-iomax.pdf", width=1.25, height=2)
 plot(iomax)
+dev.off()
+```
+
+
+```{r qpcrdatawrangle, echo=F }
+# wrangle the count data
+qpcr <- read.csv("../data/02_qpcrdata.csv", header = TRUE, na.strings = "NA", stringsAsFactors = FALSE)
+qpcr$sample <- as.factor(qpcr$sample)
+qpcr$ind <- as.factor(qpcr$ind)
+qpcr$time <- as.factor(qpcr$time)
+qpcr$region <- as.factor(qpcr$region)
+qpcr$APA <- as.factor(qpcr$APA)
+qpcr$strain <- as.factor(qpcr$strain)
+qpcr$X <- NULL
+qpcr <- dplyr::rename(qpcr, genotype = strain) 
+qpcr$genotype <- revalue(qpcr$genotype, c("fmr1" = "FMR1-KO")) 
+qpcr$genotype <- revalue(qpcr$genotype, c("wt" = "WT"))
+qpcr$APA <- revalue(qpcr$APA, c("control" = "untrained"))
+names(qpcr)[7] <- "prkcz"
+qpcr$ind <- revalue(qpcr$ind, c("BL AB" = "FMR1 AB"))
+qpcr[10:12, 6] = "FMR1-KO"
+qpcr$region.genotype <- as.factor(paste(qpcr$region, qpcr$genotype, sep="_"))
+qpcr$genoAPA <- as.factor(paste(qpcr$genotype,qpcr$APA, sep="_"))
+qpcr$genoAPAregion <- as.factor(paste(qpcr$genoAPA,qpcr$region, sep="_"))
+qpcr$genoAPA <- factor(qpcr$genoAPA, levels = c("WT_untrained" ,"WT_trained"  , "FMR1-KO_untrained","FMR1-KO_trained"))
+## reorder the dataframe
+qpcr <- qpcr[c(1:6,19:21,7:18)]
+
+## calculating gene efficiencies & rename genes ----
+dilutions <- read.csv("../data/02_dilutions_CA1CA3.csv", header = TRUE)
+head(dilutions)
+dilutions <- filter(dilutions, gene != "dlg4", gene != "pkmz.conc", gene != "rpl19.conc", gene != "grim")
+dilutions$gene <- revalue(dilutions$gene, c("dlg4.conc" = "dlg4")) 
+dilutions$gene <- revalue(dilutions$gene, c("grim.conc" = "grim"))
+dilutions$gene <- revalue(dilutions$gene, c("fmr1.conc" = "fmr1"))
+dilutions$gene <- revalue(dilutions$gene, c("rRNA18s" = "rRNA18S"))
+dilutions$gene <- revalue(dilutions$gene, c("pkmz" = "prkcz"))
+dilutions <- droplevels(dilutions)
+PrimEff(dilutions) -> eff
+```
+
+
+```{r qpcrCA1only}
+## Analyzing just the  CA1 data ----
+CA1only <- dplyr::filter(qpcr, APA != "home", region == "CA1") %>%
+  droplevels()
+CA1only <- CA1only[1:12]
+
+dd_CA1only <- cq2counts(data=CA1only, genecols=c(10:12), condcols=c(1:9), effic=eff)
+
+naive_dd_CA1only <- mcmc.qpcr(
+  data=dd_CA1only,
+  fixed="APA",
+  pr=T,pl=T, singular.ok=TRUE)
+diagnostic.mcmc(model=naive_dd_CA1only, col="grey50", cex=0.8)
+
+dd_CA1only %>%  
+  ggplot(aes(x=genoAPA, y=count)) + 
+  geom_violin(aes(fill=genoAPA, color=genoAPA)) +  scale_y_log10(name="log10(gene counts)") +
+  facet_wrap(~gene, scales = "free_y") +
+  scale_x_discrete(name="") +
+  theme_cowplot(font_size = 8, line_size = 0.25) +
+  theme(axis.text.x = element_blank(), 
+        strip.text = element_text(face = "italic")) + 
+  scale_color_manual(values = colvalAPA12) +
+  scale_fill_manual(values = colorvalgenoAPA2) 
+
+
+CA1genes <- dd_CA1only %>%  
+  ggplot(aes(x=genoAPA, y=count)) + 
+  geom_violin(aes(fill=genoAPA, color=genoAPA)) +  scale_y_log10(name="gene counts") +
+  facet_wrap(~gene, scales = "free_y") +
+  scale_x_discrete(name="") +
+  theme_cowplot(font_size = 8, line_size = 0.25) +
+  theme(axis.text.x = element_blank(), 
+        strip.text = element_text(face = "italic"),
+        legend.position = "none") + 
+  scale_color_manual(values = colvalAPA12) +
+  scale_fill_manual(values = colorvalgenoAPA2) 
+CA1genes
+
+pdf(file="../figures/3-CA1genes.pdf", width=4.25, height=2)
+plot(CA1genes)
 dev.off()
 
 ```
+
+## Integration across levels
+
+```{r integrationdatawrangle, echo = F}
+## integrative analysis ----
+
+########## gather three dataset and exampine ----
+behavior <- wtfmr1
+behavior <- melt(wtfmr1, id=c("ind","genotype", "APA", "session", "genoAPA", "genoAPAsession", "genoAPAsessionInd", "filename"))
+behavior <- filter(behavior, grepl("Entrances", variable))
+behavior$measure <- as.factor(paste(behavior$session, behavior$variable, sep="_"))
+behavior <- dplyr::select(behavior, ind, genotype, APA, genoAPA, measure, value)
+head(behavior)
+
+phy <- summary
+phy <- melt(summary, id=c("ind","genotype", "APA", "session", "genoAPA", "filename"))
+head(phy)
+phy <- dplyr::rename(phy, measure = variable)
+phy <- dplyr::select(phy, ind, genotype, APA,genoAPA, measure, value)
+head(phy)
+
+qpcrcounts <- as.data.frame(dd_CA1only)
+qpcrcounts <- qpcrcounts %>%
+  dplyr::rename(measure = gene, value=count) %>%
+  dplyr::select(ind, genotype, APA, genoAPA, measure, value)
+qpcrcounts <- dcast(qpcrcounts, ind + genotype + genoAPA + APA ~ measure, fun=mean)
+qpcrcountslong <- melt(qpcrcounts, id=c("ind","genotype","genoAPA", "APA"))
+qpcrcountslong <- dplyr::rename(qpcrcountslong, measure = variable)
+head(qpcrcountslong)
+
+############# merge all and widen!! -----
+
+alllong <- dplyr::bind_rows(behavior, phy, qpcrcountslong)
+alllong$ind <- as.factor(alllong$ind)
+alllong$measure <- as.factor(alllong$measure)
+alllong$APA <- as.factor(alllong$APA)
+alllong$genoAPA <- factor(alllong$genoAPA, levels = c("WT_untrained", "WT_trained", "FMR1-KO_untrained" , "FMR1-KO_trained"))
+
+all <- dplyr::bind_rows(behavior, phy, qpcrcountslong)
+all$ind <- as.factor(all$ind)
+all$measure <- as.factor(all$measure)
+all$APA <- as.factor(all$APA)
+all <- dplyr::select(all, ind, genotype, APA, genoAPA, measure, value)
+all <- dcast(all, ind + genotype + APA + genoAPA ~ measure, value.var= "value")
+all$genoAPA <- factor(all$genoAPA, levels = c("WT_untrained", "WT_trained", "FMR1-KO_untrained" , "FMR1-KO_trained"))
+
+```
+
+```{r integrationfigures}
+
+all$correlation1 <- "Entrances vs IO_Max"
+correlation <- all %>%
+  filter(APA == "trained") %>%
+  ggplot(aes(x=training3_Entrances, y=IO_Max, color=genoAPA)) +
+  geom_point(size = 1.5, aes(colour=genoAPA, shape=genotype)) +
+  geom_smooth(method = lm, alpha = 0.2, aes(linetype=genoAPA)) +
+  theme_cowplot(font_size = 8, line_size = 0.1) +
+  #theme(legend.position="none") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual(values=c(16, 1)) +
+  facet_wrap(~correlation1)
+correlation
+
+pdf(file="../figures/3-correlation1.pdf", width=3.25, height=2)
+plot(correlation)
+dev.off()
+
+all$correlation2 <- "Entrances vs rpl19"
+
+correlation <- all %>%
+  filter(APA == "trained") %>%
+  ggplot(aes(x=training3_Entrances, y=log10(rpl19), color=genoAPA)) +
+  geom_point(size = 1.5, aes(colour=genoAPA, shape=genotype)) +
+  geom_smooth(method = lm, alpha = 0.2, aes(linetype=genoAPA)) +
+  theme_cowplot(font_size = 8, line_size = 0.1) +
+  theme(legend.position="none",
+        axis.title = element_blank()) +
+  scale_color_manual(values = c("red", "red")) +
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual(values=c(16, 1)) +
+  facet_wrap(~correlation2)
+correlation
+
+pdf(file="../figures/3-correlation2.pdf", width=3, height=2)
+plot(correlation)
+dev.off()
+```
+
+```{r correlationmatrix}
+## then create a matrix of just gene expression data with NAs ommited
+allmatrix <- all # prepare for matrix
+allmatrix$genoAPAind <- as.factor(paste(allmatrix$genoAPA,allmatrix$ind, sep="_"))
+rownames(allmatrix) <- allmatrix$genoAPAind  # set $genoAPAsession as rownames
+names(allmatrix)
+allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
+allmatrix <- log10(allmatrix + 1) #log transform all data
+allmatrix <- as.matrix(allmatrix)
+str(allmatrix)
+allmatrix <- na.omit(allmatrix)
+allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
+
+corrplot(allmatrix_cor, type="lower", tl.col="black", tl.srt=45)
+
+
+allmatrix <- all %>%
+  filter(genotype == "WT", APA == "trained")
+allmatrix$genoAPAind <- as.factor(paste(allmatrix$genoAPA,allmatrix$ind, sep="_"))
+rownames(allmatrix) <- allmatrix$genoAPAind  # set $genoAPAsession as rownames
+names(allmatrix)
+allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
+allmatrix <- log10(allmatrix + 1) #log transform all data
+allmatrix <- as.matrix(allmatrix)
+str(allmatrix)
+allmatrix <- na.omit(allmatrix)
+allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
+
+corrplot(allmatrix_cor, type="lower", tl.col="black", tl.srt=45)
+
+allmatrix <- all %>%
+  filter(genotype == "FMR1-KO", APA == "trained")
+allmatrix$genoAPAind <- as.factor(paste(allmatrix$genoAPA,allmatrix$ind, sep="_"))
+rownames(allmatrix) <- allmatrix$genoAPAind  # set $genoAPAsession as rownames
+names(allmatrix)
+allmatrix <- allmatrix[-c(1:4,7:12,14:16,18:21,25:27)]  ## remove non-numeric columns
+allmatrix <- log10(allmatrix + 1) #log transform all data
+allmatrix <- as.matrix(allmatrix)
+str(allmatrix)
+allmatrix <- na.omit(allmatrix)
+allmatrix_cor <- round(cor(allmatrix),2)  # then create a correlation matrix
+
+corrplot(allmatrix_cor, type="upper", tl.col="black", tl.srt=45)
+```
+
+
+
+
+
+
+````{r newintegrativefigures}
+## with all long
+unique(alllong$measure)
+levels(alllong$measure)
+
+alllongslim <- alllong %>%
+  filter(grepl("IO_Max|pretraining_Entrances|training3_Entrances|grim|prkcz|rpl19", measure)) 
+
+alllongslim$measure <- factor(alllongslim$measure, levels = c("pretraining_Entrances", "training3_Entrances", "IO_Max", "grim", "prkcz", "rpl19"))
+
+
+behaviorfigure  <- alllongslim %>%
+  filter(grepl("training3_Entrances| ", measure)) %>%
+  ggplot(aes(x=genoAPA, y=value, color=genoAPA, fill=genoAPA)) +
+  geom_violin() +  
+  facet_wrap(~measure, scales = "free_y") +
+  theme_bw() +
+  scale_y_continuous(name=NULL) + 
+  scale_x_discrete(name=NULL) + 
+  scale_colour_manual(values=colvalAPA12) +
+  theme_cowplot(font_size = 8, line_size = 0.1) +
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(), 
+        legend.position="none",
+        axis.title = element_blank())  +
+  scale_fill_manual(values=colorvalgenoAPA2) 
+behaviorfigure
+
+pdf(file="../figures/4-behaviorfigure.pdf", width=1.25, height=2)
+plot(behaviorfigure)
+dev.off()
+
+qpcrfigure <- alllongslim %>%
+  filter(grepl("grim|prkcz|rpl19| ", measure)) %>%
+  ggplot(aes(x=genoAPA, y=log10(value), color=genoAPA, fill=genoAPA)) +
+  geom_violin() +  
+  facet_wrap(~measure, scales = "free_y") +
+  theme_bw() +
+  scale_y_continuous(name=NULL) + 
+  scale_x_discrete(name=NULL) + 
+  scale_colour_manual(values=colvalAPA12) +
+  theme_cowplot(font_size = 8, line_size = 0.1) +
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(),
+        strip.text = element_text(face = "italic"),
+        legend.position="none",
+        axis.title = element_blank())  +
+  scale_fill_manual(values=colorvalgenoAPA2)  
+qpcrfigure
+
+
+pdf(file="../figures/4-qpcrfigure.pdf", width=3.5, height=2)
+plot(qpcrfigure)
+dev.off()
+
+
+```
+
+## Statistics
+
+```{r stats}
+aov <- aov(Entrances ~ genoAPA, data=wtfmr1)
+summary(aov) 
+TukeyHSD(aov, which = "genoAPA") 
+
+aov <- aov(grim ~ genoAPA, data=all)
+summary(aov) 
+TukeyHSD(aov, which = "genoAPA") 
+
+aov <- aov(prkcz ~ genoAPA, data=all)
+summary(aov) 
+TukeyHSD(aov, which = "genoAPA") 
+
+aov <- aov(rpl19 ~ genoAPA, data=all)
+summary(aov) 
+TukeyHSD(aov, which = "genoAPA") 
+
+aov <- aov(IO_Max ~ genoAPA, data=all)
+summary(aov) 
+TukeyHSD(aov, which = "genoAPA") 
+```
+
 
